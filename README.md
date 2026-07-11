@@ -1,4 +1,4 @@
-# MoreQuickSlots (SPT 4)
+# MoreQuickSlots
 
 Increases the number of freely assignable quick slots (7 by default: keys 4–0) by up to 6 additional slots.
 

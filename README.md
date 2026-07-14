@@ -56,6 +56,21 @@ If this has already happened, there are two ways out:
    through `"17"` from the `fastPanel` objects in `SPT\user\profiles\<profileId>.json`
    (appears twice: PMC and Scav character).
 
+## Fika compatibility
+
+Compatible with Fika (verified against Fika 2.3.4):
+
+- Only players who want to use the extra slots need the mod – peers without it are
+  unaffected. The extra slot numbers that end up in synced profiles are inert on machines
+  without the mod (nothing renders another player's quick slot bindings).
+- Dedicated/headless hosts are unaffected: no quick slot UI is shown there and all player
+  accesses are null-guarded.
+- Binding/unbinding and item use run through the regular per-player SPT server requests
+  and Fika hands packets; nothing raid-wide is touched.
+- Caveat: should a future Fika version serialize enums by name instead of by raw value,
+  profiles containing extra-slot bindings could confuse peers without the mod – worth
+  re-checking after major Fika updates.
+
 ## Notes / Limitations
 
 - Rebinding by assigning a slot twice, drag & drop onto a slot and removing items by

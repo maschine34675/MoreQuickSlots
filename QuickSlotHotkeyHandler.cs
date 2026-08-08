@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using BepInEx.Configuration;
 using Comfort.Common;
 using EFT;
 using EFT.InventoryLogic;
@@ -20,6 +21,7 @@ namespace MoreQuickSlots
             AccessTools.Field(typeof(InventoryScreenQuickAccessPanel), "grenadeSelector");
         private static InventoryScreenQuickAccessPanel _battlePanel;
 
+        private readonly bool[] _keyHeld = new bool[Plugin.MaxExtraSlots];
         private readonly bool[] _keyConsumedByBind = new bool[Plugin.MaxExtraSlots];
 
         internal static void RegisterBattlePanel(InventoryScreenQuickAccessPanel panel)
@@ -44,15 +46,27 @@ namespace MoreQuickSlots
                 var key = Plugin.SlotKeys[i].Value;
                 var index = (EBoundItem)(Plugin.FirstExtendedValue + i);
 
-                if (key.IsDown())
+                if (IsShortcutDown(key))
                 {
+                    _keyHeld[i] = true;
                     _keyConsumedByBind[i] = TryBindHoveredItem(index);
+                }
+                else if (_keyHeld[i] && !Input.GetKey(key.MainKey) && !Input.GetKeyUp(key.MainKey))
+                {
+                    _keyHeld[i] = false;
+                    _keyConsumedByBind[i] = false;
+                }
+
+                if (!_keyHeld[i])
+                {
+                    continue;
                 }
 
                 if (_keyConsumedByBind[i])
                 {
-                    if (key.IsUp())
+                    if (Input.GetKeyUp(key.MainKey))
                     {
+                        _keyHeld[i] = false;
                         _keyConsumedByBind[i] = false;
                     }
                     continue;
@@ -60,17 +74,18 @@ namespace MoreQuickSlots
 
                 bool healingActive = healing != null && healing.IsActive;
                 bool grenadesShown = grenades != null && grenades.IsShown;
-                if (key.IsPressed() && !healingActive && !grenadesShown &&
+                if (IsShortcutHeld(key) && !healingActive && !grenadesShown &&
                     Mathf.Abs(Input.mouseScrollDelta.y) > 0.01f)
                 {
                     TryOpenSelector(panel, index);
                     continue;
                 }
 
-                if (!key.IsUp())
+                if (!Input.GetKeyUp(key.MainKey))
                 {
                     continue;
                 }
+                _keyHeld[i] = false;
                 if (healingActive)
                 {
                     ConfirmSelection(healing);
@@ -84,6 +99,27 @@ namespace MoreQuickSlots
                     TryUseQuickSlot(index);
                 }
             }
+        }
+        private static bool IsShortcutDown(KeyboardShortcut key)
+        {
+            return key.MainKey != KeyCode.None && Input.GetKeyDown(key.MainKey) && ModifiersHeld(key);
+        }
+
+        private static bool IsShortcutHeld(KeyboardShortcut key)
+        {
+            return key.MainKey != KeyCode.None && Input.GetKey(key.MainKey) && ModifiersHeld(key);
+        }
+
+        private static bool ModifiersHeld(KeyboardShortcut key)
+        {
+            foreach (KeyCode modifier in key.Modifiers)
+            {
+                if (!Input.GetKey(modifier))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
         private static bool IsTypingIntoInputField()
         {
@@ -108,17 +144,17 @@ namespace MoreQuickSlots
             try
             {
                 ItemUiContext context = ItemUiContext.Instance;
-                if (context == null || !context.isActiveAndEnabled || context.ItemContextAbstractClass == null)
+                if (context == null || !context.isActiveAndEnabled || context.CurrentItemContext == null)
                 {
                     return false;
                 }
 
-                Item item = context.ItemContextAbstractClass.Item;
+                Item item = context.CurrentItemContext.Item;
                 if (item == null)
                 {
                     return false;
                 }
-                context.method_13(item, index);
+                context.BindItem(item, index);
                 return true;
             }
             catch (Exception ex)
@@ -173,7 +209,7 @@ namespace MoreQuickSlots
                 Item item = player.InventoryController.Inventory.FastAccess.GetBoundItem(index);
                 if (item != null)
                 {
-                    panel.method_2(index, item);
+                    panel.TryShowSelectors(index, item);
                 }
             }
             catch (Exception ex)
@@ -185,7 +221,7 @@ namespace MoreQuickSlots
         {
             try
             {
-                selector.method_0(selector.GetSelectedLimb());
+                selector.SetResult(selector.GetSelectedLimb());
                 selector.Close();
             }
             catch (Exception ex)
@@ -197,7 +233,7 @@ namespace MoreQuickSlots
         {
             try
             {
-                selector.method_1(selector.GetGrenade());
+                selector.SetResult(selector.GetGrenade());
                 selector.Close();
             }
             catch (Exception ex)

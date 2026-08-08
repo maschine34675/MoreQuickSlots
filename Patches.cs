@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Reflection;
 using EFT;
 using EFT.InventoryLogic;
+using EFT.Settings.Control;
 using EFT.UI;
 using EFT.UI.DragAndDrop;
+using EFT.UI.Insurance;
 using HarmonyLib;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,7 +14,7 @@ using UnityEngine.UI;
 namespace MoreQuickSlots
 {
     [HarmonyPatch(typeof(InventoryScreenQuickAccessPanel), nameof(InventoryScreenQuickAccessPanel.Show),
-        typeof(InventoryController), typeof(ItemUiContext), typeof(GamePlayerOwner), typeof(InsuranceCompanyClass))]
+        typeof(InventoryController), typeof(ItemUiContext), typeof(GamePlayerOwner), typeof(InsuranceCompany))]
     internal static class QuickAccessPanelShowPatch
     {
         private static readonly FieldInfo BoundItemsField =
@@ -170,7 +172,7 @@ namespace MoreQuickSlots
             clone.ShowArrow(false);
         }
     }
-    [HarmonyPatch(typeof(ControlSettingsClass), nameof(ControlSettingsClass.GetBoundItemNames))]
+    [HarmonyPatch(typeof(ControlSettingsGroup), nameof(ControlSettingsGroup.GetBoundItemNames))]
     internal static class GetBoundItemNamesPatch
     {
         [HarmonyPrefix]

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
+using EFT;
 using EFT.InventoryLogic;
 using HarmonyLib;
 using Newtonsoft.Json;
@@ -15,7 +16,7 @@ namespace MoreQuickSlots
     {
         public const string PluginGuid = "com.maschine.MoreQuickSlots";
         public const string PluginName = "maschine-MoreQuickSlots";
-        public const string PluginVersion = "1.0.0";
+        public const string PluginVersion = "2.0.0";
         public const int FirstExtendedValue = 12;
         public const int MaxExtraSlots = 6;
 
@@ -57,12 +58,12 @@ namespace MoreQuickSlots
             try
             {
                 var converters = new List<JsonConverter> { new BoundItemStringConverter() };
-                converters.AddRange(JsonSerializerSettingsClass.Converters);
+                converters.AddRange(EftJsonConverters.Converters);
                 JsonConverter[] newArray = converters.ToArray();
 
-                AccessTools.Field(typeof(JsonSerializerSettingsClass), nameof(JsonSerializerSettingsClass.Converters))
+                AccessTools.Field(typeof(EftJsonConverters), nameof(EftJsonConverters.Converters))
                     .SetValue(null, newArray);
-                JsonSerializerSettingsClass.SerializerSettings.Converters = newArray;
+                EftJsonConverters.SerializerSettings.Converters = newArray;
             }
             catch (Exception ex)
             {
@@ -73,20 +74,20 @@ namespace MoreQuickSlots
         {
             try
             {
-                _ = GClass866<EBoundItem>.IReadOnlyDictionary_0;
-                _ = GClass866<EBoundItem>.IReadOnlyDictionary_1;
+                _ = EnumHelper<EBoundItem>.NameToValueMap;
+                _ = EnumHelper<EBoundItem>.ValueToNameMap;
 
                 for (int i = 0; i < MaxExtraSlots; i++)
                 {
                     var key = (EBoundItem)(FirstExtendedValue + i);
                     string name = ((int)key).ToString();
-                    if (!GClass866<EBoundItem>.Dictionary_0.ContainsKey(name))
+                    if (!EnumHelper<EBoundItem>._nameValueMap.ContainsKey(name))
                     {
-                        GClass866<EBoundItem>.Dictionary_0.Add(name, key);
+                        EnumHelper<EBoundItem>._nameValueMap.Add(name, key);
                     }
-                    if (!GClass866<EBoundItem>.Dictionary_1.ContainsKey(key))
+                    if (!EnumHelper<EBoundItem>._valueNameMap.ContainsKey(key))
                     {
-                        GClass866<EBoundItem>.Dictionary_1.Add(key, name);
+                        EnumHelper<EBoundItem>._valueNameMap.Add(key, name);
                     }
                 }
             }
@@ -108,7 +109,7 @@ namespace MoreQuickSlots
                 case KeyCode.None: return "?";
                 case KeyCode.Period: return ".";
                 case KeyCode.Equals: return "=";
-                default: return GClass2376.GetKeyNameAlias(key);
+                default: return KeyTools.GetKeyNameAlias(key);
             }
         }
     }

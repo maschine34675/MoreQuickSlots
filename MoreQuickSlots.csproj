@@ -7,7 +7,7 @@
     <Authors>maschine</Authors>
     <AssemblyName>maschine-MoreQuickSlots</AssemblyName>
     <Company>https://github.com/maschine34675/MoreQuickSlots</Company>
-    <AssemblyVersion>1.0.0</AssemblyVersion>
+    <AssemblyVersion>2.0.0</AssemblyVersion>
     <FileVersion>$(AssemblyVersion)</FileVersion>
     <Version>$(AssemblyVersion)</Version>
     <LangVersion>latest</LangVersion>

@@ -19,11 +19,15 @@ uses undefined enum values starting at `12` for the extra slots:
   (`"Item4"`, `"12"`, …). The server stores bindings generically in `Inventory.FastPanel`
   (a dictionary with string keys), so **no server mod is required** and bindings persist
   across sessions/raids.
-- **Hotkeys**: A MonoBehaviour polls the configured keys (BepInEx `KeyboardShortcut`).
-  Just like the vanilla keys 4–0: with an item under the cursor in the inventory, the key
-  binds the item. In raid: a short tap uses/equips the bound item (on key release, like
-  vanilla); **hold the key + mouse wheel** opens the body part selection (healing items) or
-  grenade selection, scrolling selects, **releasing confirms** – identical to the vanilla slots.
+- **Hotkeys**: A MonoBehaviour polls the configured keys. It checks the main key and its
+  modifiers directly rather than calling BepInEx's `KeyboardShortcut.IsDown()`, which only
+  fires while no other key is held – so the slots also work while moving. Polling is
+  suppressed while a text field has focus, so typing in a search box or chat never triggers
+  a slot. Just like the vanilla keys 4–0: with an item under the cursor in the inventory,
+  the key binds the item. In raid: a short tap uses/equips the bound item (on key release,
+  like vanilla); **hold the key + mouse wheel** opens the body part selection (healing items)
+  or grenade selection, scrolling selects, **releasing confirms** – identical to the vanilla
+  slots.
 
 ## Configuration (F12 / ConfigurationManager)
 
@@ -39,8 +43,8 @@ dotnet build MoreQuickSlots.csproj -c Release
 ```
 
 The DLL is automatically copied to `BepInEx\plugins\maschine-MoreQuickSlots\`.
-Expects the usual folder layout (`C:\SPT\Development\MoreQuickSlots` next to
-`C:\SPT\EscapeFromTarkov_Data` and `C:\SPT\BepInEx`).
+All references are relative, so the project folder is expected two levels below the SPT
+install root – next to `<SPT>\EscapeFromTarkov_Data` and `<SPT>\BepInEx`.
 
 ## Uninstalling
 
@@ -53,23 +57,30 @@ If this has already happened, there are two ways out:
 
 1. Reinstall the mod, empty the extra slots, then uninstall again; **or**
 2. Clean the profile manually: stop the server and delete all entries with keys `"12"`
-   through `"17"` from the `fastPanel` objects in `SPT\user\profiles\<profileId>.json`
-   (appears twice: PMC and Scav character).
+   through `"17"` from the `fastPanel` objects in
+   `SPT_Runtime\user\profiles\<profileId>.json` (appears twice: PMC and Scav character).
 
 ## Fika compatibility
 
-Compatible with Fika (verified against Fika 2.3.4):
+Compatible with Fika (checked against the Fika 2.4.0 sources):
 
-- Only players who want to use the extra slots need the mod – peers without it are
-  unaffected. The extra slot numbers that end up in synced profiles are inert on machines
-  without the mod (nothing renders another player's quick slot bindings).
-- Dedicated/headless hosts are unaffected: no quick slot UI is shown there and all player
+- Only players who want the extra slots need the mod – peers without it are unaffected.
+  The extra slot numbers do travel with the synced profile, but Fika writes enum values as
+  raw binary of fixed width, and on the receiving side they only ever land in plain
+  dictionaries. No UI renders another player's quick slot bindings, and looting the corpse
+  of a player who uses the mod goes through a controller that never reads them.
+- Dedicated/headless hosts are unaffected: no quick slot UI exists there and all player
   accesses are null-guarded.
-- Binding/unbinding and item use run through the regular per-player SPT server requests
-  and Fika hands packets; nothing raid-wide is touched.
-- Caveat: should a future Fika version serialize enums by name instead of by raw value,
-  profiles containing extra-slot bindings could confuse peers without the mod – worth
-  re-checking after major Fika updates.
+- Binding/unbinding and item use run through the regular per-player SPT server requests and
+  Fika's normal replication; nothing raid-wide is touched.
+- Typing in Fika's in-raid chat does not trigger the slots – the text-field guard covers it.
+- Known limitation: Fika's host-only raid admin UI (opened with the `openAdminUI` console
+  command) does not suppress the hotkeys. Pressing a slot key while it is open uses the
+  bound item in the background.
+- Caveat: the extra slots use enum values the game itself does not define. They stay
+  harmless as long as nobody renders another player's inventory; if a future Fika version
+  or another mod adds a spectator or foreign-inventory view, peers without this mod could
+  throw on those values. Worth re-checking after major Fika updates.
 
 ## Notes / Limitations
 
